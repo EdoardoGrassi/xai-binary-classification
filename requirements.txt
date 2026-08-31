@@ -1,0 +1,7 @@
+captum
+kymatio
+scikit-learn
+scipy<1.17 # kymatio uses deprecated methods
+seaborn
+torch
+torchvision
