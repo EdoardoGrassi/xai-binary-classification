@@ -54,26 +54,29 @@ class ConvNet(nn.Module):
         # self.conv0 = nn.Conv2d(channels, 128, kernel_size=(11, 11))
         self.conv0 = nn.Conv2d(channels, 128, kernel_size=(7, 7))
         self.conv1 = nn.Conv2d(128, 128, kernel_size=(3, 3))
-        self.conv2 = nn.Conv2d(128, 128, kernel_size=(3, 3))
+        # self.conv2 = nn.Conv2d(128, 128, kernel_size=(3, 3))
         self.features = nn.Sequential(
             self.conv0,
+            nn.Dropout2d(p=0.5),
             nn.BatchNorm2d(128),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=(2, 2)),
 
             self.conv1,
+            nn.Dropout2d(p=0.5),
             nn.BatchNorm2d(128),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=(2, 2)),
 
-            self.conv2,
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(),
-            nn.MaxPool2d(kernel_size=(2, 2)),
+            # self.conv2,
+            # nn.Dropout2d(p=0.5),
+            # nn.BatchNorm2d(128),
+            # nn.ReLU(),
+            # nn.MaxPool2d(kernel_size=(2, 2)),
         )
         self.classifier = nn.Sequential(
             nn.Flatten(),
-            # nn.Dropout(p=0.2),
+            nn.Dropout(p=0.2),
             # nn.Linear(in_features=128 * 22 * 22, out_features=2),
             nn.Linear(in_features=21632, out_features=2),
         )
