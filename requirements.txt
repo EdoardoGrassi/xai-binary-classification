@@ -1,5 +1,6 @@
 captum
 kymatio
+scikit-image
 scikit-learn
 scipy<1.17 # kymatio uses deprecated methods
 seaborn
