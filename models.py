@@ -72,16 +72,6 @@ class ScatNet(nn.Module):
         self.features = Scattering2D(J=J, shape=(w, h), L=L, max_order=2)
         self.classifier = nn.Sequential(
             nn.Flatten(),
-            # nn.Linear(in_features=coefficients, out_features=1024),
-            # nn.ReLU(),
-            # nn.Dropout(p=0.1),
-            # nn.Linear(in_features=1024, out_features=512),
-            # nn.ReLU(),
-            # nn.Dropout(p=0.1),
-            # nn.Linear(in_features=512, out_features=128),
-            # nn.ReLU(),
-            # nn.Dropout(p=0.1),
-            # nn.Linear(in_features=128, out_features=1),
             nn.Linear(in_features=coefficients, out_features=640),
             nn.ReLU(),
             nn.Dropout(p=0.1),
