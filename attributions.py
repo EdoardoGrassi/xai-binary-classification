@@ -45,12 +45,31 @@ def generate_occluded_batch(
     batch.masked_fill_(masks[:, tc.newaxis, :, :], baseline)
     return masks, batch
 
+def generate_occluded_batches(
+    images: tc.Tensor,
+    window_shape: tuple[int, int],
+    window_stride: tuple[int, int],
+    baseline: float,
+) -> tuple[tc.Tensor, tc.Tensor]:
+    assert images.ndim == 4, "Expected a batch of images"
+    # assume image has standard pytorch format [B, C, H, W]
+
+    # generate a batch of images
+    h, w = images.shape[-2:]
+    masks = generate_occlusion_masks(images.device, (h, w), window_shape, window_stride)
+
+    # change to [B, mask, C, H, W]
+    batch = images.unsqueeze(dim=1).repeat(1, masks.shape[0], 1, 1, 1)
+    # occlude with rolling window
+    batch.masked_fill_(masks[tc.newaxis, :, tc.newaxis, :, :], baseline)
+    return masks, batch
+
 
 class ImageOcclusion:
     def __init__(self) -> None:
         pass
 
-    def explain(
+    def explain_image(
         self,
         model: tc.nn.Module,
         image: tc.Tensor,
@@ -61,13 +80,13 @@ class ImageOcclusion:
         assert image.ndim == 3
         masks, perturbations = generate_occluded_batch(image, window_shape, window_stride, baseline)
         with tc.inference_mode():
-            reference = model(image)
+            # some models always require a batch dimension so add one
+            reference = model(image.view(1, *image.shape)).squeeze(0)
             predictions = model(perturbations)
             assert predictions.shape[-1] == 1
             reference.squeeze_(-1)
             predictions.squeeze_(-1)
 
-        # TODO: formulate score as change in probability of the prediction?
         importance = reference - predictions
         # stack the scores into a heatmap
         heatmap = importance[:, tc.newaxis, tc.newaxis] * masks.float()
@@ -76,7 +95,34 @@ class ImageOcclusion:
         # normalize each pixel score based on number of occlusion masks that cover it
         mask_cover_count = masks.int().sum(dim=0)
         heatmap /= mask_cover_count
+        return heatmap
+        
+    def explain_batch(
+        self,
+        model: tc.nn.Module,
+        images: tc.Tensor,
+        window_shape: tuple[int, int],
+        window_stride: tuple[int, int],
+        baseline: float,
+    ) -> tc.Tensor:
+        assert images.ndim == 4
+        batch_size: int = images.shape[0] 
+        masks, perturbations = generate_occluded_batches(images, window_shape, window_stride, baseline)
+        with tc.inference_mode():
+            reference = model(images)
+            # merge batch and mask dimension for model prediction
+            predictions = model(perturbations.view(-1, *images.shape[-3:])).view(batch_size, -1, 1)
+            assert predictions.shape[-1] == 1
+            reference.squeeze_(-1)
+            predictions.squeeze_(-1)
 
-        # TODO: global normalize heatmap?
+        importance = reference - predictions
+        # stack the scores into a heatmap
+        heatmap = importance[:, tc.newaxis, tc.newaxis] * masks.float()
+        heatmap = tc.sum(heatmap, dim=1)
+
+        # normalize each pixel score based on number of occlusion masks that cover it
+        mask_cover_count = masks.int().sum(dim=0)
+        heatmap /= mask_cover_count
         return heatmap
         
