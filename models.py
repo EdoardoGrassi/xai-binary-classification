@@ -9,7 +9,7 @@ class ConvNet(nn.Module):
         self.name = type(self).__name__.lower()
 
         channels, _, _ = shape
-        self.conv0 = nn.Conv2d(channels, 64, kernel_size=(7), stride=2, padding=4)
+        self.conv0 = nn.Conv2d(channels, 64, kernel_size=(7), stride=2, padding=3)
         self.conv1 = nn.Conv2d(64, 128, kernel_size=(5), stride=2, padding=2)
         self.conv2 = nn.Conv2d(128, 128, kernel_size=(3), stride=1, padding=1)
         self.features = nn.Sequential(
@@ -59,8 +59,7 @@ class ScatNet(nn.Module):
         super().__init__()
         self.name = type(self).__name__.lower()
 
-        # TODO: justify values
-        J = 5 # wavelet invariant scales
+        J = 3 # wavelet invariant scales
         L = 8 # wavelet invariant angles
         channels, w, h = shape
 
